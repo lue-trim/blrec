@@ -11,8 +11,9 @@
 ## conda环境
 参考另一个项目[bili_login的环境](https://github.com/lue-trim/bilibiliLogin/blob/main/bili_login.yaml)
 ## 配置文件
-- `settings.toml`中设置blrec的主机与端口号
-- `settings.toml`中设置alist的主机、端口号、用户名、加密后的密码（获取方法[在这](https://alist-v3.apifox.cn/api-128101242)）
+- 第一次运行的时候会生成示例`settings.toml`，需要根据实际运行环境自行修改参数
+- 在`settings.toml`中设置blrec的主机与端口号
+- 在`settings.toml`中设置alist的主机、端口号、用户名、加密后的密码（获取方法[在这](https://alist-v3.apifox.cn/api-128101242)）
 ## blrec设置
 1. 在blrec的Webhook设置中添加autorec的url(默认是`http://localhost:23560`)
 2. 至少勾选`VideoPostprocessingCompletedEvent`（自动上传视频和弹幕）和`RecordingFinishedEvent`（自动更新cookies）

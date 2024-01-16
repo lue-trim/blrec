@@ -146,13 +146,13 @@ class AutoRecSession(requests.Session):
         return data['code']
 
     def upload_alist_action(self, token:str, local_filename:str, dist_filename:str):
-        '多进程使用的流式上传文件，失败后自动重试3次以防网络问题'
-        for _ in range(3):
+        '供multiprocessing使用的流式上传文件，自动重试6次以防上传时网盘抽风'
+        for i in range(6):
             try:
                 self.upload_alist(token, local_filename, dist_filename, True)
             except:
                 traceback.print_exc()
-                continue
+                time.sleep(4**i)
             else:
                 break
 
@@ -183,7 +183,7 @@ class AutoRecSession(requests.Session):
             if remove_after_upload:
                 os.remove(filename)
         else:
-            print("Upload failed :", filename, response['message'])
+            raise Exception("{} Upload failed: {}".format(filename, response))
 
     def upload_alist_form(self, token:str, filename: str):
         '表单上传文件（已废弃）'
@@ -357,8 +357,27 @@ def upload_video(video_filename: str):
     pool.close()
 
 # 加载toml
-with open("settings.toml", 'r', encoding='utf-8') as f:
-    settings = toml.load(f)
+if not os.path.exists("settings.toml"):
+    with open("settings.toml", 'w', encoding='utf-8') as f:
+        DEFAULT_SETTINGS = """[blrec]
+host_blrec = 'localhost'
+port_blrec = 2233
+
+[alist]
+port_alist = 5244
+host_alist = 'localhost'
+username = 'wase'
+password = 'AFFA9DBA2C1A74EB34F1585110B0A414F9693AF93BC52C218BE2EEBE7309C43B'
+
+[server]
+host_server = 'localhost'
+port_server = 23560
+"""
+        f.write(DEFAULT_SETTINGS)
+        quit()
+else:
+    with open("settings.toml", 'r', encoding='utf-8') as f:
+        settings = toml.load(f)
 
 # const
 ## blrec
