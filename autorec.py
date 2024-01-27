@@ -355,6 +355,7 @@ def upload_video(video_filename: str):
         dist_filename = i[1]
         pool.apply_async(session.upload_alist_action, args=[token, local_filename, dist_filename])
     pool.close()
+    pool.join()
 
 # 加载toml
 if not os.path.exists("settings.toml"):
