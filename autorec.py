@@ -26,10 +26,21 @@ class RequestHandler(BaseHTTPRequestHandler):
         if event_type == 'RecordingFinishedEvent':
             # 录制完成，更新cookies
             refresh_cookies()
+        elif event_type == 'LiveBeganEvent':
+            # 开播，记录开播信息
+            self.rec_info = json_obj
         elif event_type == 'VideoPostprocessingCompletedEvent':
             # 视频后处理完成，上传到alist
+
+            # 检查有没有记录开播信息
+            try:
+                self.rec_info
+            except NameError:
+                self.rec_info = None
+
+            # 上传
             filename = json_obj['data']['path']
-            upload_video(filename)
+            upload_video(filename, self.room_info)
         else:
             print("Got new Event: ", event_type)
         
@@ -324,18 +335,32 @@ def refresh_cookies():
     new_data = {"header": {"cookie": new_cookies}}
     session.set_blrec(new_data)
 
-def upload_video(video_filename: str):
+def upload_video(video_filename: str, rec_info=None):
     '上传视频'
     # 文件名处理
     appendices = ['flv', 'jsonl', 'xml', 'jpg', 'mp4'] # 可能存在的后缀名
     filenames = []
     for appendix in appendices:
-        # 以下两块自己处理
-        filename_split = os.path.split(video_filename)
-        target_filename = filename_split[1] # 目标文件名
-        target_dir = os.path.split(filename_split[0])[1] # 目标文件夹(日期)
-
+        # 本地文件名
         local_filename = "{}{}".format(video_filename[:-3], appendix)
+
+        # 远程文件名
+        if rec_info:
+            # 以下自己处理
+            # 远程文件名
+            filename_split = os.path.split(video_filename)
+            target_filename = filename_split[1]
+            
+            # 远程文件夹名
+            date_info = rec_info['date'][:10]
+            title_info = rec_info['data']['room_info']['title']
+            target_dir = "{}_{}".format(date_info, title_info)
+        else:
+            # 这一块是废弃的
+            filename_split = os.path.split(video_filename)
+            target_filename = filename_split[1] # 目标文件名
+            target_dir = os.path.split(filename_split[0])[1] # 目标文件夹(日期)
+
         dist_filename = "/quark/{}/{}{}".format(target_dir, target_filename[:-3], appendix) # 给文件加上不同的后缀名
 
         # [本地文件名, 远程文件名]
