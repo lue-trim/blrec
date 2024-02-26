@@ -17,7 +17,7 @@ def main():
     dest_dir = ""
 
     # 解析参数
-    options, args = getopt.getopt(sys.argv[1:], "hf:d:", ["help"])
+    options, args = getopt.getopt(sys.argv[1:], "hf:d:p:r", ["help"])
     for name, value in options:
         if name in ("-h","--help"):
             usage()
