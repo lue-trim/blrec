@@ -36,7 +36,7 @@ def main():
     # 获取文件名，去除文件夹
     filenames = os.listdir(local_dir)
     for idx, filename in enumerate(filenames):
-        if os.path.isdir(filename):
+        if os.path.isdir(os.path.join(local_dir, filename)):
             del filenames[idx]
     
     # 获取token
