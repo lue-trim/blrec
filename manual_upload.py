@@ -49,7 +49,7 @@ def main():
         local_filename = os.path.join(local_dir, filename)
         dest_filename = os.path.join(dest_dir, filename)
         print("正在上传：{} -> {} ({}/{})".format(local_filename, dest_filename, idx+1, total))
-        session.upload_alist(token, local_filename, dest_dir, remove_after_upload)
+        session.upload_alist(token, local_filename, dest_filename, remove_after_upload)
     
 if __name__ == "__main__":
     main()
