@@ -35,7 +35,7 @@ class RequestHandler(BaseHTTPRequestHandler):
 
             # 上传
             filename = json_obj['data']['path']
-            upload_video(filename, self.room_info)
+            upload_video(filename, self.rec_info)
         else:
             print("Got new Event: ", event_type)
         
