@@ -1,4 +1,4 @@
-import os, time, requests, re, json, toml, multiprocessing, traceback
+import os, time, requests, re, json, toml, multiprocessing, traceback, datetime
 import http.cookiejar, requests.utils
 import urllib3
 
@@ -21,21 +21,17 @@ class RequestHandler(BaseHTTPRequestHandler):
         if event_type == 'RecordingFinishedEvent':
             # 录制完成，更新cookies
             refresh_cookies()
-        elif event_type == 'LiveBeganEvent':
-            # 开播，记录开播信息
-            self.rec_info = json_obj
         elif event_type == 'VideoPostprocessingCompletedEvent':
             # 视频后处理完成，上传到alist
 
-            # 检查有没有记录开播信息
-            try:
-                self.rec_info
-            except AttributeError:
-                self.rec_info = None
+            # 获取直播间信息
+            room_id = json_obj['data']['room_id']
+            session = AutoRecSession()
+            room_info = session.get_blrec_data(room_id)
 
             # 上传
             filename = json_obj['data']['path']
-            upload_video(filename, self.rec_info)
+            upload_video(filename, room_info)
         else:
             print("Got new Event: ", event_type)
         
@@ -223,6 +219,14 @@ class AutoRecSession(requests.Session):
 
         # 请求API
         self.patch(url, data=body)
+    
+    def get_blrec_data(self, room_id):
+        '获取房间信息'
+        url = "http://{}:{}{}".format(host_blrec, port_blrec, '/api/v1/tasks/{}/data'.format(room_id))
+        response = self.get(url=url)
+        response_json = response.json()
+
+        return response_json
 
 # functions
 ## 奇奇怪怪的功能
@@ -254,8 +258,8 @@ def upload_video(video_filename: str, rec_info=None):
             target_filename = filename_split[1]
             
             # 远程文件夹名
-            date_info = rec_info['date'][:10]
-            title_info = rec_info['data']['room_info']['title']
+            date_info = datetime.datetime.strftime(datetime.datetime.now(), "%y%m%d")
+            title_info = rec_info['room_info']['title']
             target_dir = "{}_{}".format(date_info, title_info)
         else:
             # 这一块是废弃的

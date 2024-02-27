@@ -54,7 +54,7 @@ def refresh_cookies(is_forced=False):
 
     # 检查是否需要更新
     if not is_forced:
-        print("正在检查是否需要刷新")
+        print("Checking cookies validity...")
         response = session.get(
             url='https://passport.bilibili.com/x/passport-login/web/cookie/info', 
             headers=headers, 
@@ -62,9 +62,9 @@ def refresh_cookies(is_forced=False):
             )
         data = response.json()['data']
         if data['refresh']:
-            print("当前Cookies已过期")
+            print("Cookies expired, refreshing...")
         else:
-            ans = input("当前Cookies在有效期内，是否继续刷新？(Y/N): ")
+            ans = input("Cookies not expired, proceed refreshing?(Y/N): ")
             if ans.lower() != 'y':
                 return
 
@@ -102,7 +102,7 @@ def refresh_cookies(is_forced=False):
     csrf = cookies_dict['bili_jct']
 
     # 确认更新
-    print("正在更新cookies")
+    print("Confirming cookies...")
     response = session.post(
         url='https://passport.bilibili.com/x/passport-login/web/confirm/refresh', 
         headers=headers, 

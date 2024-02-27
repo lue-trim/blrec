@@ -3,7 +3,7 @@ import getopt, os, sys
 
 def usage():
     '--help'
-    print("""上传指定目录中的所有文件到指定目录(不支持嵌套目录)
+    print("""手动上传指定目录中的所有文件到指定目录(不支持嵌套目录)
 -p <pathname>\t要上传的文件所在目录
 -d <dest_dir>\t要上传到的远程文件夹名称
 -r\t上传完成后删除原文件(optional)
@@ -48,7 +48,7 @@ def main():
     for idx, filename in enumerate(filenames):
         local_filename = os.path.join(local_dir, filename)
         dest_filename = os.path.join(dest_dir, filename)
-        print("正在上传：{} -> {} ({}/{})".format(local_filename, dest_filename, idx+1, total))
+        print("Uploading：{} -> {} ({}/{})".format(local_filename, dest_filename, idx+1, total))
         session.upload_alist(token, local_filename, dest_filename, remove_after_upload)
     
 if __name__ == "__main__":
