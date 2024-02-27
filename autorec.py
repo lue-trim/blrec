@@ -30,7 +30,7 @@ class RequestHandler(BaseHTTPRequestHandler):
             # 检查有没有记录开播信息
             try:
                 self.rec_info
-            except NameError:
+            except AttributeError:
                 self.rec_info = None
 
             # 上传
