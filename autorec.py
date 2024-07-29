@@ -51,10 +51,14 @@ class File:
     def __init__(self, fp, filename):
         self.filename = filename
         self.fp = fp
+        self.total_size = 0
+        self.current_size = 0
+        self.last_time = datetime.datetime.now()
 
     def get_size(self):
         '获取文件大小'
-        return os.path.getsize(self.filename)
+        self.total_size = os.path.getsize(self.filename)
+        return self.total_size
 
     def read(self, size=-1):
         'read方法，给http模块调用，让其对文件自动分片'
@@ -65,6 +69,23 @@ class File:
             #return self.fp.read(self.get_size())
         #else:
             # 大文件分片上传
+
+        # 识别chunk size
+        if size == -1:
+            self.current_size += 1
+        else:
+            self.current_size += size
+
+        # 计算上传时间
+        new_time = datetime.datetime.now()
+        delta_time = new_time - self.last_time
+        secs = delta_time.total_seconds()
+        if secs <= 0:
+            secs = 1.0
+        self.last_time = new_time
+
+        # 输出进度并返回
+        print(f"Progress: {self.current_size/self.total_size*100}%, {size/secs/8}kB/s", end='          \r')
         return self.fp.read(size)
 
     def __len__(self):
@@ -180,7 +201,7 @@ class AutoRecSession(requests.Session):
         response_json = response.json()
         
         if response_json['code'] == 200:
-            print("Upload success:", filename)
+            print("\nUpload success:", filename) # 加个\n防止覆盖上传进度条
             # 是否在上传后删除文件
             if remove_after_upload:
                 os.remove(filename)
@@ -232,8 +253,9 @@ class AutoRecSession(requests.Session):
 ## 奇奇怪怪的功能
 def dict2str(data: dict):
     '将dict转换为符合http要求的字符串'
-    s = str(data)
-    return s.replace('\'', '\"')
+    #s = str(data)
+    #return s.replace('\'', '\"') 
+    return json.dumps(data)# 之前写的什么破玩意
 
 ## 刷新cookies
 def refresh_cookies():
@@ -258,7 +280,7 @@ def upload_video(video_filename: str, rec_info=None):
             target_filename = filename_split[1]
             
             # 远程文件夹名
-            date_info = datetime.datetime.strftime(datetime.datetime.now(), "%y%m%d")
+            date_info = datetime.datetime.now().strftime("%y%m%d")
             title_info = rec_info['room_info']['title']
             target_dir = "{}_{}".format(date_info, title_info)
         else:

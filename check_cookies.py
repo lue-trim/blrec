@@ -61,6 +61,9 @@ def refresh_cookies(is_forced=False):
             params={'csrf':cookies_dict['bili_jct']}
             )
         data = response.json()['data']
+        if data is None:
+            print("Cookies invalid, try another set of cookies.txt and loginData.json instead.")
+            return
         if data['refresh']:
             print("Cookies expired, refreshing...")
         else:
@@ -73,7 +76,11 @@ def refresh_cookies(is_forced=False):
         url="https://www.bilibili.com/correspond/1/{}".format(correspondPath), 
         headers=headers
         )
-    refresh_csrf = re.search(r'(?<=<div id="1-name">).*?(?=</div>)', response.text).group()
+    try:
+        refresh_csrf = re.search(r'(?<=<div id="1-name">).*?(?=</div>)', response.text).group()
+    except AttributeError:
+        print("Current cookies are invalid, try another set of cookies.txt and loginData.json instead.")
+        return
 
     # 获取refresh_token
     with open("loginData.json", 'r', encoding='utf-8') as f:
