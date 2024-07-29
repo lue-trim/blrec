@@ -51,13 +51,12 @@ class File:
     def __init__(self, fp, filename):
         self.filename = filename
         self.fp = fp
-        self.total_size = 0
+        self.total_size = os.path.getsize(self.filename)
         self.current_size = 0
         self.last_time = datetime.datetime.now()
 
     def get_size(self):
         '获取文件大小'
-        self.total_size = os.path.getsize(self.filename)
         return self.total_size
 
     def read(self, size=-1):
@@ -72,7 +71,9 @@ class File:
 
         # 识别chunk size
         if size == -1:
-            self.current_size += 1
+            self.current_size = self.total_size
+        elif size >= self.total_size:
+            self.current_size += self.total_size - self.current_size
         else:
             self.current_size += size
 
@@ -85,7 +86,11 @@ class File:
         self.last_time = new_time
 
         # 输出进度并返回
-        print(f"Progress: {self.current_size/self.total_size*100}%, {size/secs/8}kB/s", end='          \r')
+        print("Read: {:.2f}%, {:.2f}kB/s".format(
+            self.current_size / self.total_size * 100,
+            self.current_size / secs / 1024
+        ),
+        end='          \r')
         return self.fp.read(size)
 
     def __len__(self):
