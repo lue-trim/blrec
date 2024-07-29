@@ -206,7 +206,7 @@ class AutoRecSession(requests.Session):
             if remove_after_upload:
                 os.remove(filename)
         else:
-            raise Exception("{} Upload failed: {}".format(filename, response))
+            raise Exception("{} Upload failed: {}".format(filename, response_json))
 
     def upload_alist_form(self, token:str, filename: str):
         '表单上传文件（已废弃）'
