@@ -195,7 +195,6 @@ class AutoRecSession(requests.Session):
             "File-Path": dist_filename,
             "As-Task": "True",
             "Content-Type": "application/octet-stream",
-            "Content-Length": ""
         }
 
         # 打开文件
