@@ -111,7 +111,7 @@ class AutoRecSession(requests.Session):
         }
 
         # 请求API
-        data = dict2str(params)
+        data = utils.dict2str(params)
         response = self.post(url, data=data, headers=headers)
         response_json = response.json()
         # 获取结果
@@ -137,7 +137,7 @@ class AutoRecSession(requests.Session):
         }
 
         # 请求API
-        response = self.post(url=url, data=dict2str(data), headers=headers)
+        response = self.post(url=url, data=utils.dict2str(data), headers=headers)
         data = response.json()
 
         # 获取结果
@@ -162,7 +162,7 @@ class AutoRecSession(requests.Session):
         }
 
         # 请求API
-        response = self.post(url=url, data=dict2str(data), headers=headers)
+        response = self.post(url=url, data=utils.dict2str(data), headers=headers)
         data = response.json()
 
         # 获取结果
@@ -240,7 +240,7 @@ class AutoRecSession(requests.Session):
     def set_blrec(self, data: dict):
         '更改blrec设置'
         url = "http://{}:{}{}".format(host_blrec, port_blrec, '/api/v1/settings')
-        body = dict2str(data)
+        body = utils.dict2str(data)
 
         # 请求API
         self.patch(url, data=body)
@@ -253,14 +253,42 @@ class AutoRecSession(requests.Session):
 
         return response_json
 
-# functions
 ## 奇奇怪怪的功能
-def dict2str(data: dict):
-    '将dict转换为符合http要求的字符串'
-    #s = str(data)
-    #return s.replace('\'', '\"') 
-    return json.dumps(data)# 之前写的什么破玩意
+class utils:
+    def dict2str(data: dict):
+        '将dict转换为符合http要求的字符串'
+        #s = str(data)
+        #return s.replace('\'', '\"') 
+        return json.dumps(data)# 之前写的什么破玩意
+    
+    def parse_macro(s: str, data: dict):
+        '将配置文件含宏部分解析成对应字符串'
+        from functools import reduce
+        # 匹配
+        re_res = re.findall(r'{[^}]*/[^}]*}', s)
+        if not re_res:
+            return s
+        
+        #print(re_res.groups())
+        # 解析
+        for match_res in re_res:
+            split_list = match_res[1:-1].split('/')
+            #print(split_list)
+            
+            if split_list[0] == 'time':
+                # 时间解析
+                time_now = datetime.datetime.now()
+                replaced_s = time_now.strftime(split_list[1])
+            else:
+                # 字典解析
+                replaced_s = str(reduce(lambda x,y:x[y], split_list, data))
+            
+            # 替换
+            s = re.sub(match_res, replaced_s, s)
+        
+        return s
 
+# functions
 ## 刷新cookies
 def refresh_cookies():
     '刷新cookies'
@@ -274,30 +302,17 @@ def upload_video(video_filename: str, rec_info=None):
     filenames = []
     for appendix in appendices:
         # 本地文件名
-        local_filename = "{}{}".format(video_filename[:-3], appendix)
+        local_filename = "{}{}".format(os.path.splitext(video_filename)[0], appendix)
+        if not os.path.exists(local_filename):
+            continue
 
         # 远程文件名
         if rec_info:
-            # 以下自己处理
-            # 远程文件名
-            filename_split = os.path.split(video_filename)
-            target_filename = filename_split[1]
-            
-            # 远程文件夹名
-            date_info = datetime.datetime.now().strftime("%y%m%d")
-            title_info = rec_info['room_info']['title']
-            target_dir = "{}_{}".format(date_info, title_info)
-        else:
-            # 这一块是废弃的
-            filename_split = os.path.split(video_filename)
-            target_filename = filename_split[1] # 目标文件名
-            target_dir = os.path.split(filename_split[0])[1] # 目标文件夹(日期)
-
-        dist_filename = "/quark/{}/{}{}".format(target_dir, target_filename[:-3], appendix) # 给文件加上不同的后缀名
+            dist_dir = utils.parse_macro(remote_dir, rec_info)
+            dist_filename = os.path.join(dist_dir, os.path.split(local_filename)[1])
 
         # [本地文件名, 远程文件名]
-        if os.path.exists(local_filename):
-            filenames.append([local_filename, dist_filename])
+        filenames.append([local_filename, dist_filename])
     
     # session
     session = AutoRecSession()
@@ -318,7 +333,7 @@ def upload_video(video_filename: str, rec_info=None):
 if not os.path.exists("settings.toml"):
     with open("settings.toml", 'w', encoding='utf-8') as f:
         print("正在导出默认配置")
-        DEFAULT_SETTINGS = """[blrec]
+        DEFAULT_SETTINGS = r"""[blrec]
 host_blrec = 'localhost'
 port_blrec = 2233
 
@@ -327,6 +342,10 @@ port_alist = 5244
 host_alist = 'localhost'
 username = 'wase'
 password = 'AFFA9DBA2C1A74EB34F1585110B0A414F9693AF93BC52C218BE2EEBE7309C43B'
+# password format: sha256(<your password>-https://github.com/alist-org/alist)
+remote_dir = '/quark/我的备份/来自：TIMI Leave 电脑备份/records/2024_下/{time/%y%m%d}_{room_info/title}'
+# usage: {time/<time formatting expressions>} or {<keys of recording properties>/<attribute>}
+# (Refer to README.md)
 
 [server]
 host_server = 'localhost'
@@ -350,6 +369,7 @@ host_alist = settings_alist['host_alist']
 port_alist = settings_alist['port_alist']
 username = settings_alist['username']
 password = settings_alist['password']
+remote_dir = settings_alist['remote_dir']
 
 ## server
 settings_server = settings['server']
