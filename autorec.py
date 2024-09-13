@@ -302,7 +302,7 @@ def upload_video(video_filename: str, rec_info=None):
     filenames = []
     for appendix in appendices:
         # 本地文件名
-        local_filename = "{}{}".format(os.path.splitext(video_filename)[0], appendix)
+        local_filename = "{}.{}".format(os.path.splitext(video_filename)[0], appendix)
         if not os.path.exists(local_filename):
             continue
 
