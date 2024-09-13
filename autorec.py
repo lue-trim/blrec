@@ -310,6 +310,8 @@ def upload_video(video_filename: str, rec_info=None):
         if rec_info:
             dist_dir = utils.parse_macro(remote_dir, rec_info)
             dist_filename = os.path.join(dist_dir, os.path.split(local_filename)[1])
+        else:
+            dist_filename = remote_dir
 
         # [本地文件名, 远程文件名]
         filenames.append([local_filename, dist_filename])
