@@ -264,10 +264,11 @@ class utils:
     def parse_macro(s: str, data: dict):
         '将配置文件含宏部分解析成对应字符串'
         from functools import reduce
+        parsed_s = s
         # 匹配
         re_res = re.findall(r'{[^}]*/[^}]*}', s)
         if not re_res:
-            return s
+            return parsed_s
         
         #print(re_res.groups())
         # 解析
@@ -284,9 +285,9 @@ class utils:
                 replaced_s = str(reduce(lambda x,y:x[y], split_list, data))
             
             # 替换
-            s = re.sub(match_res, replaced_s, s)
+            parsed_s = re.sub(match_res, replaced_s, parsed_s)
         
-        return s
+        return parsed_s
 
 # functions
 ## 刷新cookies
