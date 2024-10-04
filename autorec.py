@@ -76,6 +76,22 @@ class AutoBackuper():
 # classes
 class RequestHandler(BaseHTTPRequestHandler):
     '网络请求服务器'
+    def do_PUT(self):
+        'PUT信息，来自add_backup_task'
+        # 读取参数
+        data = self.rfile.read(int(self.headers['content-length']))
+        data = unquote(str(data, encoding='utf-8'))
+        json_obj = json.loads(data)
+
+        # 获取数据
+        local_dir = json_obj['local_dir']
+
+        # 添加
+        add_autobackup(autobackuper=autobackuper, settings_autobackup=settings_autobackup, local_dir=local_dir)
+
+        # 处理完毕
+        self.reply()
+
     def do_POST(self):
         '接收到POST信息时'
         # 读取参数
@@ -106,7 +122,11 @@ class RequestHandler(BaseHTTPRequestHandler):
             add_autobackup(autobackuper=autobackuper, settings_autobackup=settings_autobackup, local_dir=local_dir)
         else:
             print("Got new Event: ", event_type)
-        
+
+        # 回复
+        self.reply()
+
+    def reply(self):
         # 回复
         self.send_response(200)
         self.send_header('Content-Type', 'application/json')
