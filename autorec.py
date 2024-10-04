@@ -5,6 +5,74 @@ import urllib3
 from urllib.parse import unquote, quote
 from http.server import HTTPServer, BaseHTTPRequestHandler
 
+class AutoBackuper():
+    '自动备份工具'
+    def __init__(self) -> None:
+        self.task_list = []
+
+    def add_task(self, t, local_dir, settings_alist):
+        '添加任务'
+        task_dict = {
+            'time': t,
+            'local_dir': local_dir,
+            'settings_alist': settings_alist,
+        }
+
+        # 查重
+        if task_dict not in self.task_list:
+            print(f"Auto backuping task created on {t}, {local_dir} -> {settings_alist['remote_dir']}")
+            self.task_list.append(task_dict)
+    
+    def upload_action(self, task_dict):
+        '执行上传'
+        # session
+        session = AutoRecSession()
+        token = session.get_alist_token()
+        
+        # 分离参数
+        local_dir = task_dict['local_dir']
+        settings_alist = task_dict['settings_alist']
+        dest_dir = settings_alist['remote_dir'] + os.path.split(local_dir)[1]
+        
+        # 获取文件名，去除文件夹
+        filenames = os.listdir(local_dir)
+        for idx, filename in enumerate(filenames):
+            if os.path.isdir(os.path.join(local_dir, filename)):
+                del filenames[idx]
+        
+        # 获取token
+        session = AutoRecSession()
+        token = session.get_alist_token()
+
+        # 上传文件
+        pool = multiprocessing.Pool()
+        for filename in filenames:
+            local_filename = os.path.join(local_dir, filename)
+            dest_filename = os.path.join(dest_dir, filename)
+            pool.apply_async(session.upload_alist_action, args=[settings_alist, token, local_filename, dest_filename])
+        pool.close()
+        pool.join()
+    
+    def __check_time(self, interval):
+        '循环检查时间'
+        while True:
+            for task_id, task_dict in enumerate(self.task_list):
+                # 发现到点了
+                if datetime.datetime.now() >= task_dict['time']:
+                    print(f"Auto backuping...\n{task_dict}")
+                    self.upload_action(task_dict)
+                    del self.task_list[task_id]
+                    break
+            # 接着睡
+            time.sleep(interval)
+    
+    def start_check(self, settings_autobackup:dict):
+        '启动循环检查'
+        interval = settings_autobackup['timer_interval']
+        check_pool = multiprocessing.Pool()
+        check_pool.apply_async(self.__check_time, args=[interval])
+        check_pool.close()
+
 # classes
 class RequestHandler(BaseHTTPRequestHandler):
     '网络请求服务器'
@@ -31,7 +99,11 @@ class RequestHandler(BaseHTTPRequestHandler):
 
             # 上传
             filename = json_obj['data']['path']
-            upload_video(filename, room_info)
+            upload_video(filename, rec_info=room_info, settings_alist=settings_alist)
+
+            # 自动备份
+            local_dir = os.path.split(filename)[0]
+            add_autobackup(autobackuper=autobackuper, settings_autobackup=settings_autobackup, local_dir=local_dir)
         else:
             print("Got new Event: ", event_type)
         
@@ -41,7 +113,7 @@ class RequestHandler(BaseHTTPRequestHandler):
         self.end_headers()
         data = {
             "code": 200,
-            "message": "Mua!"
+            "message": "Mua!\n"
         }
         self.wfile.write(str(data).encode())
 
@@ -99,12 +171,12 @@ class File:
 
 class AutoRecSession(requests.Session):
     '本地http通信专用类'
-    def get_alist_token(self):
+    def get_alist_token(settings_alist:dict, self):
         '获取alist管理token'
-        url = "http://{}:{}{}".format(host_alist, port_alist, '/api/auth/login/hash')
+        url = "http://{}:{}{}".format(settings_alist['host_alist'], settings_alist['port_alist'], '/api/auth/login/hash')
         params = {
-            "username": username,
-            "password": password.lower()
+            "username": settings_alist['username'],
+            "password": settings_alist['password'].lower()
         }
         headers = {
             'Content-Type': 'application/json'
@@ -122,10 +194,10 @@ class AutoRecSession(requests.Session):
             print("Get token failed,", response_json['message'])
             return ""
     
-    def copy_alist(self, token:str, source_dir:str, filenames:list, dist_dir:str):
+    def copy_alist(self, settings_alist:dict, token:str, source_dir:str, filenames:list, dist_dir:str):
         '复制文件'
         # 请求参数
-        url = "http://{}:{}{}".format(host_alist, port_alist, '/api/fs/copy')
+        url = "http://{}:{}{}".format(settings_alist['host_alist'], settings_alist['port_alist'], '/api/fs/copy')
         headers = {
             "Authorization": token,
             "Content-Type": "application/json"
@@ -148,10 +220,10 @@ class AutoRecSession(requests.Session):
         
         return data['code']
     
-    def rm_alist(self, token:str, dirname:str, filenames:list):
+    def rm_alist(self, settings_alist:dict, token:str, dirname:str, filenames:list):
         '删除文件'
         # 请求参数
-        url = "http://{}:{}{}".format(host_alist, port_alist, '/api/fs/remove')
+        url = "http://{}:{}{}".format(settings_alist['host_alist'], settings_alist['port_alist'], '/api/fs/remove')
         headers = {
             "Authorization": token,
             "Content-Type": "application/json"
@@ -173,26 +245,26 @@ class AutoRecSession(requests.Session):
         
         return data['code']
 
-    def upload_alist_action(self, token:str, local_filename:str, dist_filename:str):
+    def upload_alist_action(self, settings_alist:dict, token:str, local_filename:str, dest_filename:str):
         '供multiprocessing使用的流式上传文件，自动重试6次以防上传时网盘抽风'
         for i in range(6):
             try:
-                self.upload_alist(token, local_filename, dist_filename, True)
+                self.upload_alist(settings_alist, token, local_filename, dest_filename)
             except:
                 traceback.print_exc()
                 time.sleep(4**i)
             else:
                 break
 
-    def upload_alist(self, token:str, filename:str, dist_filename:str, remove_after_upload=False):
+    def upload_alist(self, settings_alist:dict, token:str, filename:str, dest_filename:str):
         '流式上传文件'
-        dist_filename = quote(dist_filename) # URL编码
+        dest_filename = quote(dest_filename) # URL编码
 
         # 请求参数
-        url = "http://{}:{}{}".format(host_alist, port_alist, '/api/fs/put')
+        url = "http://{}:{}{}".format(settings_alist['host_alist'], settings_alist['port_alist'], '/api/fs/put')
         headers = {
             "Authorization": token,
-            "File-Path": dist_filename,
+            "File-Path": dest_filename,
             "As-Task": "True",
             "Content-Type": "application/octet-stream",
         }
@@ -207,12 +279,12 @@ class AutoRecSession(requests.Session):
         if response_json['code'] == 200:
             print("\nUpload success:", filename) # 加个\n防止覆盖上传进度条
             # 是否在上传后删除文件
-            if remove_after_upload:
+            if settings_alist['remove_after_upload']:
                 os.remove(filename)
         else:
             raise Exception("{} Upload failed: {}".format(filename, response_json))
 
-    def upload_alist_form(self, token:str, filename: str):
+    def upload_alist_form(self, settings_alist:dict, token:str, filename: str):
         '表单上传文件（已废弃）'
         # 文件名处理
         filename_split = os.path.split(filename)
@@ -223,7 +295,7 @@ class AutoRecSession(requests.Session):
 
         # 请求参数
         #token = self.get_alist_token()
-        url = "http://{}:{}{}".format(host_alist, port_alist, '/api/fs/form')
+        url = "http://{}:{}{}".format(settings_alist['host_alist'], settings_alist['port_alist'], '/api/fs/form')
         headers = {
             "Authorization": token,
             "File-Path": filepath,
@@ -296,7 +368,7 @@ def refresh_cookies():
     import check_cookies
     check_cookies.refresh_cookies(True)
 
-def upload_video(video_filename: str, rec_info=None):
+def upload_video(video_filename: str, settings_alist=None, rec_info=None):
     '上传视频'
     # 文件名处理
     appendices = ['flv', 'jsonl', 'xml', 'jpg', 'mp4'] # 可能存在的后缀名
@@ -309,13 +381,13 @@ def upload_video(video_filename: str, rec_info=None):
 
         # 远程文件名
         if rec_info:
-            dist_dir = utils.parse_macro(remote_dir, rec_info)
-            dist_filename = os.path.join(dist_dir, os.path.split(local_filename)[1])
+            dist_dir = utils.parse_macro(settings_alist['remote_dir'], rec_info)
+            dest_filename = os.path.join(dist_dir, os.path.split(local_filename)[1])
         else:
-            dist_filename = remote_dir
+            dest_filename = settings_alist['remote_dir']
 
         # [本地文件名, 远程文件名]
-        filenames.append([local_filename, dist_filename])
+        filenames.append([local_filename, dest_filename])
     
     # session
     session = AutoRecSession()
@@ -327,10 +399,37 @@ def upload_video(video_filename: str, rec_info=None):
     pool = multiprocessing.Pool()
     for i in filenames:
         local_filename = i[0]
-        dist_filename = i[1]
-        pool.apply_async(session.upload_alist_action, args=[token, local_filename, dist_filename])
+        dest_filename = i[1]
+        pool.apply_async(session.upload_alist_action, args=[settings_alist, token, local_filename, dest_filename])
     pool.close()
     pool.join()
+
+
+def add_autobackup(autobackuper:AutoBackuper, settings_autobackup:dict, local_dir:str):
+    '自动备份功能'
+    for settings_alist in settings_autobackup['servers']:
+        try:
+            # 读取时间
+            scheduled_time = settings_alist['time']
+            datetime_now = datetime.datetime.now()
+            time_today = datetime_now.strftime(r'%H:%M:%S')
+
+            # 决定要不要第二天再启动
+            if time_today >= scheduled_time:
+                scheduled_date = datetime_now.strftime(r'%y/%m/%d')
+            else:
+                scheduled_date = (datetime_now + datetime.timedelta(days=1)).strftime(r'%y/%m/%d')
+            formatted_time = f"{scheduled_date}T{scheduled_time}"
+            t = datetime.datetime.strptime(formatted_time, r"%y/%m/%dT%H:%M:%S")
+
+            # 添加任务
+            autobackuper.add_task(
+                t = t, 
+                local_dir = local_dir, 
+                settings_alist = settings_alist
+                )
+        except Exception:
+            traceback.print_exc()
 
 # 加载toml
 if not os.path.exists("settings.toml"):
@@ -342,13 +441,28 @@ port_blrec = 2233
 
 [alist]
 port_alist = 5244
-host_alist = 'localhost'
+settings_alist['host_alist'] = 'localhost'
 username = 'wase'
 password = 'AFFA9DBA2C1A74EB34F1585110B0A414F9693AF93BC52C218BE2EEBE7309C43B'
 # password format: sha256(<your password>-https://github.com/alist-org/alist)
 remote_dir = '/quark/我的备份/来自：TIMI Leave 电脑备份/records/2024_下/{time/%y%m%d}_{room_info/title}'
 # usage: {time/<time formatting expressions>} or {<keys of recording properties>/<attribute>}
 # (Refer to README.md)
+remove_after_upload = False # optional, whether delete local file after upload, True by default
+
+[autobackup]
+# Settings for auto backup
+timer_interval = 60 # optional, seconds of upload timer interval
+[[autobackup.servers]]
+# Support multiple remote configs, the same format as 'alist' part above
+# For example, when remote_dir is set to /xxx, then it seems like:
+# local(automatically get from blrec): /aaa/bbb/ccc/d.flv(xml,jsonl...) -> remote: /xxx/ccc/d.flv(xml,jsonl...)
+port_alist = 5244
+settings_alist['host_alist'] = ''
+username = ''
+password = ''
+remote_dir = ''
+remove_after_upload = False
 
 [server]
 host_server = 'localhost'
@@ -367,12 +481,14 @@ host_blrec = settings_blrec['host_blrec']
 port_blrec = settings_blrec['port_blrec']
 
 ## alist
-settings_alist = settings['alist']
-host_alist = settings_alist['host_alist']
-port_alist = settings_alist['port_alist']
-username = settings_alist['username']
-password = settings_alist['password']
-remote_dir = settings_alist['remote_dir']
+settings_alist:dict = settings['alist']
+settings_alist.setdefault('remove_after_upload', True)
+
+## autobackup
+settings_autobackup:dict = settings['autobackup']
+settings_autobackup.setdefault('timer_interval', 60)
+for i in settings_autobackup['servers']:
+    i.setdefault('remove_after_upload', True)
 
 ## server
 settings_server = settings['server']
@@ -381,11 +497,8 @@ port_server = settings_server['port_server']
 
 # main
 if __name__ == "__main__":
-    # 输出PID，方便结束进程
-    pid = os.getpid()
-    with open("pid", 'w') as f:
-        f.write(str(pid))
-    print("service started: ", pid)
+    # 自动备份
+    autobackuper = AutoBackuper()
 
     # 监听
     addr = (host_server, port_server)
