@@ -39,7 +39,7 @@ class AutoBackuper():
         # 分离参数
         local_dir = task_dict['local_dir']
         settings_temp = task_dict['settings_alist']
-        dest_dir = os.path.join(settings_temp['remote_dir'], os.path.split(local_dir)[1])
+        dest_dir = os.path.join(settings_temp['remote_dir'], os.path.split(local_dir)[0])
         
         # 获取文件名，去除文件夹
         filenames = os.listdir(local_dir)
@@ -482,7 +482,7 @@ def add_autobackup(autobackuper:AutoBackuper, settings_autobackup:dict, local_di
             time_today = datetime_now.strftime(r'%H:%M:%S')
 
             # 决定要不要第二天再启动
-            if time_today >= scheduled_time:
+            if time_today < scheduled_time:
                 scheduled_date = datetime_now.strftime(r'%y/%m/%d')
             else:
                 scheduled_date = (datetime_now + datetime.timedelta(days=1)).strftime(r'%y/%m/%d')
@@ -526,9 +526,9 @@ timer_interval = 60 # optional, seconds of upload timer interval
 # local(automatically get from blrec): /aaa/bbb/ccc/d.flv(xml,jsonl...) -> remote: /xxx/ccc/d.flv(xml,jsonl...)
 port_alist = 5244
 settings_alist['host_alist'] = ''
-username = ''
-password = ''
-remote_dir = ''
+username = 'username'
+password = 'SHA-256'
+remote_dir = '/remote/records/' # the last slash of the dir path MUST present
 remove_after_upload = false
 
 [server]

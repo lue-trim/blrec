@@ -32,7 +32,7 @@ def main():
     
     # 获取文件名，去除文件夹
     filenames = os.listdir(local_dir)
-    last_dir = os.path.split(local_dir)[1]
+    last_dir = os.path.split(local_dir)[0]
     for idx, filename in enumerate(filenames):
         if os.path.isdir(os.path.join(local_dir, filename)):
             del filenames[idx]
@@ -40,11 +40,11 @@ def main():
     # 读取配置
     with open(config_file, 'r', encoding='utf-8') as f:
         settings = toml.load(f)
-    settings_autobackup:dict = settings['alist']
+    settings_autobackup:dict = settings['autobackup']
 
     # 读取备份设置
     for settings_alist in settings_autobackup['servers']:
-        dest_dir = settings_alist['']
+        dest_dir = settings_alist['remote_dir']
         # 获取token
         session = autorec.AutoRecSession()
         token = session.get_alist_token(settings_alist)
