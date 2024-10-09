@@ -16,7 +16,7 @@ def main():
     config_file = "settings.toml"
 
     # 解析参数
-    options, args = getopt.getopt(sys.argv[1:], "hf:p:c:", ["help"])
+    options, args = getopt.getopt(sys.argv[1:], "hf:p:c:", ["help", "path=", "config="])
     for name, value in options:
         if name in ("-h","--help"):
             usage()
@@ -32,7 +32,7 @@ def main():
     
     # 获取文件名，去除文件夹
     filenames = os.listdir(local_dir)
-    last_dir = os.path.split(local_dir)[0]
+    last_dir = os.path.split(os.path.split(local_dir)[0])[1]
     for idx, filename in enumerate(filenames):
         if os.path.isdir(os.path.join(local_dir, filename)):
             del filenames[idx]

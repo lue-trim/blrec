@@ -39,7 +39,8 @@ class AutoBackuper():
         # 分离参数
         local_dir = task_dict['local_dir']
         settings_temp = task_dict['settings_alist']
-        dest_dir = os.path.join(settings_temp['remote_dir'], os.path.split(local_dir)[0])
+        last_dir = os.path.split(os.path.split(local_dir)[0])[1]
+        dest_dir = os.path.join(settings_temp['remote_dir'], last_dir)
         
         # 获取文件名，去除文件夹
         filenames = os.listdir(local_dir)
