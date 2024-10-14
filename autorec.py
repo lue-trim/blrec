@@ -39,8 +39,7 @@ class AutoBackuper():
         # 分离参数
         local_dir = task_dict['local_dir']
         settings_temp = task_dict['settings_alist']
-        last_dir = os.path.split(os.path.split(local_dir)[0])[1]
-        dest_dir = os.path.join(settings_temp['remote_dir'], last_dir)
+        dest_dir = utils.get_dest_dir(local_dir, settings_temp['remote_dir'])
         
         # 获取文件名，去除文件夹
         filenames = os.listdir(local_dir)
@@ -395,6 +394,16 @@ class AutoRecSession(requests.Session):
 
 ## 奇奇怪怪的功能
 class utils:
+    def get_dest_dir(local_dir: str, remote_dir: str):
+        '自动拼接本地文件夹和设置里的远程文件夹名，获取远程文件夹名称'
+        last_dir = os.path.split(local_dir)[1]
+        if not last_dir:
+            # 路径以/结尾时
+            last_dir = os.path.split(os.path.split(local_dir)[0])[1]
+        dest_dir = os.path.join(remote_dir, last_dir)
+
+        return dest_dir
+
     def dict2str(data: dict):
         '将dict转换为符合http要求的字符串'
         #s = str(data)
@@ -529,7 +538,7 @@ port_alist = 5244
 settings_alist['host_alist'] = ''
 username = 'username'
 password = 'SHA-256'
-remote_dir = '/remote/records/' # the last slash of the dir path MUST present
+remote_dir = '/remote/records/'
 remove_after_upload = false
 
 [server]
