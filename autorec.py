@@ -225,9 +225,9 @@ class File:
         self.last_time = new_time
 
         # 输出进度并返回
-        print("Read: {:.2f}%, {:.2f}kB/s".format(
+        print("Read: {:.2f}%".format(
             self.current_size / self.total_size * 100,
-            self.current_size / secs / 1024
+            #self.current_size / secs / 1024
         ),
         end='          \r')
         return self.fp.read(size)
@@ -447,6 +447,10 @@ def refresh_cookies():
 
 def upload_video(video_filename: str, settings_alist=None, rec_info=None):
     '上传视频'
+    # 判断一下有没有开启自动上传功能
+    if not settings_alist['enabled']:
+        return
+
     # 文件名处理
     appendices = ['flv', 'jsonl', 'xml', 'jpg', 'mp4'] # 可能存在的后缀名
     filenames = []
@@ -485,6 +489,10 @@ def upload_video(video_filename: str, settings_alist=None, rec_info=None):
 def add_autobackup(autobackuper:AutoBackuper, settings_autobackup:dict, local_dir:str):
     '自动备份功能'
     for settings_alist in settings_autobackup['servers']:
+        # 判断一下开没开
+        if not settings_alist['enabled']:
+            continue
+
         try:
             # 读取时间
             scheduled_time = settings_alist['time']
@@ -517,12 +525,13 @@ host_blrec = 'localhost'
 port_blrec = 2233
 
 [alist]
+enabled = true # optional, true for default
 port_alist = 5244
-settings_alist['host_alist'] = 'localhost'
+host_alist = 'localhost'
 username = 'wase'
 password = 'AFFA9DBA2C1A74EB34F1585110B0A414F9693AF93BC52C218BE2EEBE7309C43B'
 # password format: sha256(<your password>-https://github.com/alist-org/alist)
-remote_dir = '/quark/我的备份/来自：TIMI Leave 电脑备份/records/2024_下/{time/%y%m%d}_{room_info/title}'
+remote_dir = '/quark/2024_下/{time/%y%m%d}_{room_info/title}'
 # usage: {time/<time formatting expressions>} or {<keys of recording properties>/<attribute>}
 # (Refer to README.md)
 remove_after_upload = false # optional, whether delete local file after upload, false by default
@@ -534,8 +543,10 @@ timer_interval = 60 # optional, seconds of upload timer interval
 # Support multiple remote configs, the same format as 'alist' part above
 # For example, when remote_dir is set to /xxx, then it seems like:
 # local(automatically get from blrec): /aaa/bbb/ccc/d.flv(xml,jsonl...) -> remote: /xxx/ccc/d.flv(xml,jsonl...)
+enabled = true
+time = "07:00:00"
 port_alist = 5244
-settings_alist['host_alist'] = ''
+host_alist = 'gaazar.cc'
 username = 'username'
 password = 'SHA-256'
 remote_dir = '/remote/records/'
@@ -560,6 +571,7 @@ port_blrec = settings_blrec['port_blrec']
 ## alist
 settings_alist:dict = settings['alist']
 settings_alist.setdefault('remove_after_upload', False)
+settings_alist.setdefault('enabled', True)
 
 ## autobackup
 settings_autobackup:dict = settings['autobackup']
@@ -567,6 +579,7 @@ settings_autobackup.setdefault('timer_interval', 60)
 settings_autobackup.setdefault('servers', [])
 for i in settings_autobackup['servers']:
     i.setdefault('remove_after_upload', False)
+    i.setdefault('enabled', True)
 
 ## server
 settings_server = settings['server']

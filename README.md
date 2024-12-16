@@ -19,8 +19,8 @@
 第一次运行的时候会生成配置模板`settings.toml`，需要根据实际运行环境自行修改参数
 
 ## 录制完成后立即自动上传
-原理：在视频后处理完成后会自动获取一次录制信息，并填充到`[alist]/remote_dir`所设定的路径模板中  
-该流程不可跳过，如果只设置每日自动备份，不设置立即上传的部分，是会报错的……
+- 原理：在视频后处理完成后会自动获取一次录制信息，并填充到`[alist]/remote_dir`所设定的路径模板中  
+- 可以通过设置\[alist\]模块的`enabled`字段控制自动上传功能开启/关闭  
 ### 使用配置
 #### blrec
 1. 在blrec的Webhook设置中添加autorec的url(默认是`http://localhost:23560`)
@@ -98,7 +98,7 @@
 
 ## 每日自动备份
 可以在每天指定时段向特定alist存储备份刚刚录制好的文件（但是不能使用立即上传功能的路径模板）  
-要关闭该功能，把`autobackup.servers`置空就可以
+要完全关闭该功能，把server项给置空就可以
 ### 使用配置
 - 在`settings.toml`\[autobackup\]模块中的`interval`项设置时间检查间隔（区间越短CPU占用越大）
 - 按照与\[alist\]模块相同的格式，把要添加到的存储添加到`autobackup.servers`列表，可以同时备份到多个存储  
@@ -106,10 +106,11 @@
 （除了不能用路径模板以外，其他内容都和\[alist\]里一样）  
 - 对于每个`autobackup.servers`项，都需要设置一个预定上传时间  
 （格式是`"%H:%M:%S"`）
-- **注意**：如果要备份到多个存储，并且需要上传后自动删除文件，记得把`remove_after_upload=true`放在最后一个存储下
+- 每个存储可以和\[alist\]模块一样通过设置`enabled`项控制临时开启/关闭
+- **注意**：如果要备份到多个存储，并且上传后自动删除文件，记得把`remove_after_upload=true`放在**最后一个**存储下
 
 ## 手动补录/取消备份
-运行`python autobackup.py`，通过读取配置文件里的\[autobackup\]设置，增、删、查目前存在的备份任务  
+运行`python autobackup.py`，通过读取指定配置文件里的\[autobackup\]设置，增、删、查目前存在的备份任务  
 具体使用说明可以加`-h`/`--help`查看
 
 例：
@@ -118,14 +119,11 @@
 删掉最早的自动备份任务：`python autobackup.py -m d -i 0`  
 
 ## 立即手动上传
-运行`python manual_upload.py`，通过读取配置文件里的\[autobackup\]设置（是的，这里没打错），立即上传任意文件夹中的所有文件到指定alist存储  
+运行`python manual_upload.py`，通过读取指定配置文件里的\[autobackup\]设置，立即上传任意文件夹中的所有文件到指定alist存储  
 具体使用说明可以加`-h`/`--help`查看
 
 例：  
 立即手动上传：`python manual_upload.py -p /local/records -c upload_config.toml`
 
-# 运行
-## 服务端
+# 运行方法
 直接在终端运行`python autorec.py`，或者自己写一个`autorec.service`添加到systemctl都可以，能跑起来就行
-## 客户端
-主要指的是`python autobackup.py`与`python manual_upload.py`，具体使用帮助可加`-h`/`--help`查看
