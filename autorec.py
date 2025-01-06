@@ -1,3 +1,4 @@
+import requests.adapters
 import os, time, requests, re, json, toml, multiprocessing, traceback, datetime, threading
 import http.cookiejar, requests.utils
 import urllib3
@@ -34,6 +35,7 @@ class AutoBackuper():
         '执行上传'
         # session
         session = AutoRecSession()
+        session.mount('http://', requests.adapters.HTTPAdapter(max_retries=3))
         token = session.get_alist_token(settings_alist)
         
         # 分离参数
@@ -49,6 +51,7 @@ class AutoBackuper():
         
         # 获取token
         session = AutoRecSession()
+        session.mount('http://', requests.adapters.HTTPAdapter(max_retries=3))
         token = session.get_alist_token(settings_temp)
 
         # 上传文件
@@ -147,6 +150,7 @@ class RequestHandler(BaseHTTPRequestHandler):
                 # 获取直播间信息
                 room_id = json_obj['data']['room_id']
                 session = AutoRecSession()
+                session.mount('http://', requests.adapters.HTTPAdapter(max_retries=3))
                 room_info = session.get_blrec_data(room_id)
                 # 上传
                 filename = json_obj['data']['path']
@@ -382,7 +386,7 @@ class AutoRecSession(requests.Session):
         body = utils.dict2str(data)
 
         # 请求API
-        self.patch(url, data=body)
+        self.patch(url, data=body, timeout=10)
     
     def get_blrec_data(self, room_id):
         '获取房间信息'
@@ -442,8 +446,8 @@ class utils:
 ## 刷新cookies
 def refresh_cookies():
     '刷新cookies'
-    import check_cookies
-    check_cookies.refresh_cookies(True)
+    import account
+    account.refresh_cookies(True)
 
 def upload_video(video_filename: str, settings_alist=None, rec_info=None):
     '上传视频'
@@ -472,6 +476,7 @@ def upload_video(video_filename: str, settings_alist=None, rec_info=None):
     
     # session
     session = AutoRecSession()
+    session.mount('http://', requests.adapters.HTTPAdapter(max_retries=3))
 
     # 获取token
     token = session.get_alist_token(settings_alist)
