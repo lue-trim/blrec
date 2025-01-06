@@ -7,11 +7,11 @@
 - [alist-org/docs](https://github.com/alist-org/docs)
 
 # 要求
-## 环境
-环境我自己单独装没成功过，按理来说直接使用[Haruka-Bot](https://github.com/lue-trim/haruka-bot)的环境就可以  
+## conda环境
+`conda env create -f env.yaml`
+## PIP环境
+PIP环境我自己单独装没成功过，按理来说直接使用[Haruka-Bot](https://github.com/lue-trim/haruka-bot)的环境应该就可以  
 `pip install haruka-bot`  
-## Python版本
-在Python3.12.7下测试没问题，其他版本自行尝试吧（）  
 
 # 配置说明
 ## 初次设置
@@ -112,6 +112,7 @@
 1. 之后每隔几天可以`python autobackup.py -c`手动检查一下cookies有没有过期，如果检查发现过期会自动更新  
 当然也可以通过`python autobackup.py -c -f`不管有没有过期都强制刷新一下
 1. 一般来说登录或刷新后会自动把获取到的cookies同步到blrec，如果同步失败，可以尝试`python autobackup.py -s`重新同步
+> 若Cookies更新提示correspondPath获取失败，请先同步本地时间后再试
 
 ## 手动补录/取消备份
 运行`python autobackup.py`，通过读取指定配置文件里的\[autobackup\]设置，增、删、查目前存在的备份任务  

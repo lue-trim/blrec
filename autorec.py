@@ -442,8 +442,8 @@ class utils:
 ## 刷新cookies
 def refresh_cookies():
     '刷新cookies'
-    import check_cookies
-    check_cookies.refresh_cookies(True)
+    import account
+    account.refresh_cookies(True)
 
 def upload_video(video_filename: str, settings_alist=None, rec_info=None):
     '上传视频'

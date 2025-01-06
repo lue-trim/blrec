@@ -37,9 +37,10 @@ def login():
     '登录账号'
     credential = bili.login.login_with_qrcode_term()
     if not bili.sync(credential.check_valid()):
-        print("Invalid cookies. Aborted.")
-    else:
-        print("Login success, syncing to blrec...")
+        ans = input("Warning: this account maybe invalid, continue?")
+        if ans.lower() != 'y':
+            return
+    print("Login complete, syncing to blrec...")
 
     # 保存并同步
     sync_cookies(credential=credential)
