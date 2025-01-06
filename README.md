@@ -3,16 +3,15 @@
 理论上稍微改改API，也能用在命令行版录播姬上
 ## 基于项目
 - [acgnhiki/blrec](https://github.com/acgnhiki/blrec)；
-- [SocialSisterYi/bilibili-API-collect](https://github.com/SocialSisterYi/bilibili-API-collect)；
+- [nemo2011/bilibili-api](https://github.com/nemo2011/bilibili-api)；
 - [alist-org/docs](https://github.com/alist-org/docs)
 
 # 要求
 ## 环境
-环境要求写在`requirements.txt`里  
-`pip install -r requirements.txt`  
-实际上版本号不一定需要按文件里的这么高，低一点也能运行
+环境我自己单独装没成功过，按理来说直接使用[Haruka-Bot](https://github.com/lue-trim/haruka-bot)的环境就可以  
+`pip install haruka-bot`  
 ## Python版本
-在Python3.11下测试，但是一般只要是Python3都能跑起来
+在Python3.12.7下测试没问题，其他版本自行尝试吧（）  
 
 # 配置说明
 ## 初次设置
@@ -90,9 +89,8 @@
 }
 ```
 ## 下播后自动更新cookies
-要使用此功能需要使用另一个项目[bili_login](https://github.com/lue-trim/bilibiliLogin)来扫码获取`cookies.txt`和`data.json`  
-1. 把上述两个文件`cookies.txt`和`data.json`放到本仓库目录下
-1. 每次blrec发送`RecordingFinishedEvent`事件时会自动读取、更新并设置cookies  
+1. 需要先用`account.py`登录扫码获取cookies
+1. 然后每次blrec发送`RecordingFinishedEvent`事件时就会自动读取、更新并设置cookies了  
 
 要关闭该功能，只需在blrec的设置里关掉对应的webhook就行
 
@@ -108,6 +106,12 @@
 （格式是`"%H:%M:%S"`）
 - 每个存储可以和\[alist\]模块一样通过设置`enabled`项控制临时开启/关闭
 - **注意**：如果要备份到多个存储，并且上传后自动删除文件，记得把`remove_after_upload=true`放在**最后一个**存储下
+
+## 登录、刷新、同步cookies
+1. 第一次使用需运行`python autobackup.py -l`扫码登录
+1. 之后每隔几天可以`python autobackup.py -c`手动检查一下cookies有没有过期，如果检查发现过期会自动更新  
+当然也可以通过`python autobackup.py -c -f`不管有没有过期都强制刷新一下
+1. 一般来说登录或刷新后会自动把获取到的cookies同步到blrec，如果同步失败，可以尝试`python autobackup.py -s`重新同步
 
 ## 手动补录/取消备份
 运行`python autobackup.py`，通过读取指定配置文件里的\[autobackup\]设置，增、删、查目前存在的备份任务  
