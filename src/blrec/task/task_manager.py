@@ -76,7 +76,9 @@ class RecordTaskManager:
     async def add_task(self, settings: TaskSettings) -> None:
         logger.info(f'Adding task {settings.room_id}...')
 
-        task = RecordTask(settings.room_id)
+        cookie = self._settings_manager.get_settings({'header'}).header.cookie
+        ua = self._settings_manager.get_settings({'header'}).header.user_agent
+        task = RecordTask(room_id=settings.room_id, cookie=cookie, user_agent=ua) # 使用全局cookies
         self._tasks[settings.room_id] = task
 
         try:
