@@ -294,11 +294,8 @@ class WebApi(BaseApi):
     async def get_danmu_info(self, room_id: int, headers:dict={}) -> ResponseData:
         path = '/xlive/web-room/v1/index/getDanmuInfo'
         params = {'id': room_id}
-        header = {
-            **BASE_HEADERS,
-            **headers
-        }
-        json_res = await self._get_json(self.base_live_api_urls, path, params=params, headers=header)
+        self._logger.debug(f"Using HEADER: {headers}")
+        json_res = await self._get_json(self.base_live_api_urls, path, params=params, headers=headers)
         return json_res['data']
 
     async def get_nav(self) -> ResponseData:
