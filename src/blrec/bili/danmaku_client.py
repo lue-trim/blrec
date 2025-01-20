@@ -172,7 +172,8 @@ class DanmakuClient(EventEmitter[DanmakuListener], AsyncStoppableMixin):
                 "uid": self._uid,
                 'roomid': self._room_id,  # must not be the short id!
                 'protover': self._protover,
-                "buvid": self._buvid,
+                #"buvid": self._buvid,
+                "buvid": None,
                 'platform': 'web',
                 'type': 2,
                 'key': self._danmu_info['token'],
