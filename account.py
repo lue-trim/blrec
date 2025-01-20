@@ -6,11 +6,11 @@ import bilibili_api as bili
 
 def usage():
     '--help'
-    print("检查并更新cookies\
--l / --login\t扫码登录\
--c / --cookies\t检查cookies, 并决定是否刷新\
--s / --sync\t将cookies同步到blrec\
--f / --forced\t不管cookies有没有过期都强制刷新(optional)")
+    print("""检查并更新cookies
+-l / --login\t扫码登录
+-c / --cookies\t检查cookies, 并决定是否刷新
+-s / --sync\t将cookies同步到blrec
+-f / --forced\t不管cookies有没有过期都强制刷新(optional)""")
     quit()
 
 def cookie_dict2str(data:dict):
@@ -37,7 +37,7 @@ def login():
     '登录账号'
     credential = bili.login.login_with_qrcode_term()
     if not bili.sync(credential.check_valid()):
-        ans = input("Warning: this account maybe invalid, continue?")
+        ans = input("\nWarning: this account maybe invalid, continue?(y/N)")
         if ans.lower() != 'y':
             return
     print("Login complete, syncing to blrec...")
@@ -56,7 +56,7 @@ def refresh_cookies(is_forced=False):
         if bili.sync(credential.check_refresh()):
             print("Cookies expired, refreshing...")
         else:
-            ans = input("Cookies not expired, proceed refreshing?(Y/N): ")
+            ans = input("Cookies not expired, proceed refreshing?(y/N): ")
             if ans.lower() != 'y':
                 return
     
@@ -79,6 +79,7 @@ def sync_cookies(credential=None):
     session = autorec.AutoRecSession()
     session.set_blrec(new_data)
 
+    print(new_cookies)
     print("Cookies sync complete.")
 
 def main():
