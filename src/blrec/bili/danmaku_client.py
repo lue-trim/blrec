@@ -172,7 +172,7 @@ class DanmakuClient(EventEmitter[DanmakuListener], AsyncStoppableMixin):
                 "uid": self._uid,
                 'roomid': self._room_id,  # must not be the short id!
                 'protover': self._protover,
-                "buvid": self._buvid,
+                #"buvid": self._buvid,
                 'platform': 'web',
                 'type': 2,
                 'key': self._danmu_info['token'],
@@ -192,7 +192,7 @@ class DanmakuClient(EventEmitter[DanmakuListener], AsyncStoppableMixin):
         self._logger.debug('Receiving user authentication reply...')
         try:
             msg = await self._ws.receive(timeout=5)
-            if msg.type != aiohttp.WSMsgType.BINARY:
+            if msg.type == aiohttp.WSMsgType.ERROR:
                 raise aiohttp.ClientError(msg)
         except Exception as exc:
             self._logger.debug(
