@@ -192,7 +192,7 @@ class DanmakuClient(EventEmitter[DanmakuListener], AsyncStoppableMixin):
         self._logger.debug('Receiving user authentication reply...')
         try:
             msg = await self._ws.receive(timeout=5)
-            if msg.type == aiohttp.WSMsgType.ERROR:
+            if msg.type != aiohttp.WSMsgType.BINARY:
                 raise aiohttp.ClientError(msg)
         except Exception as exc:
             self._logger.debug(
