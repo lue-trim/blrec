@@ -172,7 +172,7 @@ class DanmakuClient(EventEmitter[DanmakuListener], AsyncStoppableMixin):
                 "uid": self._uid,
                 'roomid': self._room_id,  # must not be the short id!
                 'protover': self._protover,
-                #"buvid": self._buvid,
+                "buvid": self._buvid,
                 'platform': 'web',
                 'type': 2,
                 'key': self._danmu_info['token'],
@@ -231,7 +231,10 @@ class DanmakuClient(EventEmitter[DanmakuListener], AsyncStoppableMixin):
         else:
             api = self.appapi
         try:
-            self._danmu_info = await api.get_danmu_info(self._room_id)
+            self._danmu_info = await api.get_danmu_info(
+                room_id=self._room_id,
+                headers=self.headers
+                )
         except Exception as exc:
             self._logger.warning(f'Failed to update danmu info: {repr(exc)}')
             self._danmu_info = COMMON_DANMU_INFO
