@@ -232,10 +232,13 @@ class DanmakuClient(EventEmitter[DanmakuListener], AsyncStoppableMixin):
             api = self.webapi
         else:
             api = self.appapi
+        # 更新弹幕信息时去除cookies字段
+        temp_headers = self.headers.copy()
+        temp_headers.pop('Cookie')
         try:
             self._danmu_info = await api.get_danmu_info(
                 room_id=self._room_id,
-                headers=self.headers
+                headers=temp_headers
                 )
         except Exception as exc:
             self._logger.warning(f'Failed to update danmu info: {repr(exc)}')
