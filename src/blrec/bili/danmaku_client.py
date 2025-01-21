@@ -157,6 +157,7 @@ class DanmakuClient(EventEmitter[DanmakuListener], AsyncStoppableMixin):
         )
         self._logger.debug(f'Connecting WebSocket... {url}')
         try:
+            self._logger.debug(f"Using HEADER: {self.headers}")
             self._ws = await self.session.ws_connect(
                 url, timeout=5, headers=self.headers
             )
@@ -172,8 +173,8 @@ class DanmakuClient(EventEmitter[DanmakuListener], AsyncStoppableMixin):
                 "uid": self._uid,
                 'roomid': self._room_id,  # must not be the short id!
                 'protover': self._protover,
-                #"buvid": self._buvid,
-                "buvid": None,
+                "buvid": self._buvid,
+                #"buvid": None,
                 'platform': 'web',
                 'type': 2,
                 'key': self._danmu_info['token'],
