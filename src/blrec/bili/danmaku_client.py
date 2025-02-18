@@ -144,7 +144,7 @@ class DanmakuClient(EventEmitter[DanmakuListener], AsyncStoppableMixin):
             if self._host_index >= len(self._danmu_info['host_list']):
                 self._host_index = 0
                 # self._rotate_api_platform()  # XXX: use web api only
-                await self._update_danmu_info()
+                await self._update_danmu_info(no_cookies=True)
             raise
         else:
             self._logger.debug('Connected to server')
@@ -225,7 +225,7 @@ class DanmakuClient(EventEmitter[DanmakuListener], AsyncStoppableMixin):
         else:
             self._api_platform = 'android'
 
-    async def _update_danmu_info(self) -> None:
+    async def _update_danmu_info(self, no_cookies=False) -> None:
         self._logger.debug(f'Updating danmu info via {self._api_platform} api...')
         api: Union[WebApi, AppApi]
         if self._api_platform == 'web':
@@ -234,7 +234,8 @@ class DanmakuClient(EventEmitter[DanmakuListener], AsyncStoppableMixin):
             api = self.appapi
         # 更新弹幕信息时去除cookies字段
         temp_headers = self.headers.copy()
-        temp_headers.pop('Cookie')
+        if no_cookies:
+            temp_headers.pop('Cookie')
         try:
             self._danmu_info = await api.get_danmu_info(
                 room_id=self._room_id,
