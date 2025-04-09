@@ -119,20 +119,23 @@ class LiveMonitor(EventEmitter[LiveEventListener], DanmakuListener, SwitchableMi
                 await self._handle_status_change(current_status)
 
     async def on_danmaku_received(self, danmu: Danmaku) -> None:
-        danmu_cmd = danmu['cmd']
-
-        if danmu_cmd == DanmakuCommand.LIVE.value:
-            await self._live.update_room_info()
-            await self._handle_status_change(LiveStatus.LIVE)
-        elif danmu_cmd == DanmakuCommand.PREPARING.value:
-            await self._live.update_room_info()
-            if danmu.get('round', None) == 1:
-                await self._handle_status_change(LiveStatus.ROUND)
-            else:
-                await self._handle_status_change(LiveStatus.PREPARING)
-        elif danmu_cmd == DanmakuCommand.ROOM_CHANGE.value:
-            await self._live.update_room_info()
-            await self._emit('room_changed', self._live.room_info)
+        try:
+            danmu_cmd = danmu['cmd']
+        except Exception:
+            self._logger.error(f'{str(danmu)} does not have attribute "cmd".')
+        else:
+            if danmu_cmd == DanmakuCommand.LIVE.value:
+                await self._live.update_room_info()
+                await self._handle_status_change(LiveStatus.LIVE)
+            elif danmu_cmd == DanmakuCommand.PREPARING.value:
+                await self._live.update_room_info()
+                if danmu.get('round', None) == 1:
+                    await self._handle_status_change(LiveStatus.ROUND)
+                else:
+                    await self._handle_status_change(LiveStatus.PREPARING)
+            elif danmu_cmd == DanmakuCommand.ROOM_CHANGE.value:
+                await self._live.update_room_info()
+                await self._emit('room_changed', self._live.room_info)
 
     async def _handle_status_change(self, current_status: LiveStatus) -> None:
         self._logger.debug(
