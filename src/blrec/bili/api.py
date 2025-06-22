@@ -256,6 +256,7 @@ class WebApi(BaseApi):
         self, url: str, with_wbi: bool = False, *args: Any, **kwds: Any
     ) -> JsonResponse:
         if with_wbi:
+            await self._update_wbi_key()
             key = self.__class__._wbi_key
             ts = int(datetime.now().timestamp())
             params = list(kwds.pop("params").items())
@@ -266,6 +267,7 @@ class WebApi(BaseApi):
             return await super()._get_json_res(url, *args, **kwds)
         except ApiRequestError as e:
             if e.code == -352 and time.monotonic() - self.__class__._wbi_key_mtime > 60:
+            # if e.code == -352:
                 await self._update_wbi_key()
             raise
 
@@ -337,8 +339,12 @@ class WebApi(BaseApi):
         return json_res
 
     async def _update_wbi_key(self) -> None:
+        self._logger.debug("Refreshing wbi key...")
+        # if time.monotonic() - self.__class__._wbi_key_mtime < 60:
+        #     await asyncio.sleep(60)
         nav = await self.get_nav()
         img_key = wbi.extract_key(nav['data']['wbi_img']['img_url'])
         sub_key = wbi.extract_key(nav['data']['wbi_img']['sub_url'])
+        self._logger.debug(f"New wbi key: {img_key}, {sub_key}")
         self.__class__._wbi_key = wbi.make_key(img_key, sub_key)
         self.__class__._wbi_key_mtime = time.monotonic()

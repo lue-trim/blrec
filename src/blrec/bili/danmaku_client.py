@@ -100,7 +100,7 @@ class DanmakuClient(EventEmitter[DanmakuListener], AsyncStoppableMixin):
         self._buvid = extract_buvid_from_cookie(cookie) or ''
 
     async def _do_start(self) -> None:
-        await self._update_danmu_info()
+        # await self._update_danmu_info()
         await self._connect()
         await self._create_message_loop()
         self._logger.debug('Started danmaku client')
@@ -134,21 +134,37 @@ class DanmakuClient(EventEmitter[DanmakuListener], AsyncStoppableMixin):
     )
     async def _connect(self) -> None:
         self._logger.debug('Connecting to server...')
-        try:
-            await self._connect_websocket()
-            await self._send_auth()
-            reply = await self._recieve_auth_reply()
-            await self._handle_auth_reply(reply)
-        except Exception:
-            self._host_index += 1
-            if self._host_index >= len(self._danmu_info['host_list']):
-                self._host_index = 0
+
+        # 更新弹幕服务器信息
+        await self._update_danmu_info()
+
+        # 根据弹幕服务器信息连接
+        connected = False
+        while not connected:
+            for idx, _ in enumerate(self._danmu_info['host_list']):
+                # 逐个尝试连接
+                self._host_index = idx
+                try:
+                    await self._connect_websocket()
+                    await self._send_auth()
+                    reply = await self._recieve_auth_reply()
+                    await self._handle_auth_reply(reply)
+                except Exception:
+                    await asyncio.sleep(self._retry_delay)
+                else:
+                    connected = True
+                    self._retry_delay = 0
+                    break
+            else:
+                # 全部服务器连接失败
+                self._logger.debug(f'All connection failed, retrying with no cookies in {self._retry_delay}s')
+                # self._host_index = 0
                 # self._rotate_api_platform()  # XXX: use web api only
+                await asyncio.sleep(self._retry_delay)
+                self._retry_delay += 1
                 await self._update_danmu_info(no_cookies=True)
-            raise
-        else:
-            self._logger.debug('Connected to server')
-            await self._emit('client_connected')
+        self._logger.debug('Connected to server')
+        await self._emit('client_connected')
 
     async def _connect_websocket(self) -> None:
         url = 'wss://{}:{}/sub'.format(
@@ -535,11 +551,11 @@ class DanmakuCommand(Enum):
 COMMON_DANMU_INFO: Final[Dict[str, Any]] = {
     "token": "",
     "host_list": [
-        {
-            "host": "broadcastlv.chat.bilibili.com",
-            "port": 2243,
-            "wss_port": 443,
-            "ws_port": 2244,
-        }
+        # { # 置空试试
+        #     "host": "broadcastlv.chat.bilibili.com",
+        #     "port": 2243,
+        #     "wss_port": 443,
+        #     "ws_port": 2244,
+        # }
     ],
 }
