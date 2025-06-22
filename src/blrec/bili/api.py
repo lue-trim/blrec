@@ -339,9 +339,10 @@ class WebApi(BaseApi):
         return json_res
 
     async def _update_wbi_key(self) -> None:
+        if time.monotonic() - self.__class__._wbi_key_mtime < 60:
+            return
+            # await asyncio.sleep(60)
         self._logger.debug("Refreshing wbi key...")
-        # if time.monotonic() - self.__class__._wbi_key_mtime < 60:
-        #     await asyncio.sleep(60)
         nav = await self.get_nav()
         img_key = wbi.extract_key(nav['data']['wbi_img']['img_url'])
         sub_key = wbi.extract_key(nav['data']['wbi_img']['sub_url'])
