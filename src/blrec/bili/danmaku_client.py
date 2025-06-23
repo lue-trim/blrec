@@ -342,11 +342,12 @@ class DanmakuClient(EventEmitter[DanmakuListener], AsyncStoppableMixin):
     async def _message_loop(self) -> None:
         room = self.room
 
+        delay = 0
         while True:
-            delay = 0
             await room.connect()
 
             delay += 1
+            self._logger.debug(f"Danmaku server disconnected, retrying in {delay} seconds...")
             await asyncio.sleep(min(delay, 120))
 
         return
