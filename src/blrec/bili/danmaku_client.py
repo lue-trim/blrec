@@ -23,6 +23,8 @@ from .api import AppApi, WebApi
 from .exceptions import DanmakuClientAuthError
 from .typing import ApiPlatform, Danmaku
 
+from bilibili_api import live, Credential
+
 __all__ = 'DanmakuClient', 'DanmakuListener', 'Danmaku', 'DanmakuCommand'
 
 
@@ -88,6 +90,28 @@ class DanmakuClient(EventEmitter[DanmakuListener], AsyncStoppableMixin):
                 )
         self._logger.debug(f'protover: {self._protover}')
 
+        # 获取Cookies
+        cookies_str = self.headers.get('Cookie', '')
+
+        # Cookies处理 @haruka-bot
+        if cookies_str.endswith(';'):
+            cookies_str = cookies_str[:-1]
+        cookies_strs = cookies_str.split(';')
+        cookies_dict = {}
+        for i in cookies_strs:
+            item_list = i.split('=')
+            if len(item_list) > 1:
+                d = {item_list[0].lower(): item_list[1]}
+                cookies_dict.update(d)
+            elif len(item_list) == 1:
+                d = {item_list[0].lower(): ""}
+                cookies_dict.update(d)
+
+        # 创建room对象
+        c = Credential(**cookies_dict)
+        self.room = live.LiveDanmaku(room_id, credential=c)
+        self.room.add_event_listener('ALL', self._dispatch_message)
+
     @property
     def headers(self) -> Dict[str, str]:
         return self._headers
@@ -101,6 +125,8 @@ class DanmakuClient(EventEmitter[DanmakuListener], AsyncStoppableMixin):
 
     async def _do_start(self) -> None:
         # await self._update_danmu_info()
+
+        # 连接弹幕服务器
         await self._connect()
         await self._create_message_loop()
         self._logger.debug('Started danmaku client')
@@ -134,6 +160,10 @@ class DanmakuClient(EventEmitter[DanmakuListener], AsyncStoppableMixin):
     )
     async def _connect(self) -> None:
         self._logger.debug('Connecting to server...')
+
+        self._logger.debug('Connected to server')
+        await self._emit('client_connected')
+        return
 
         # 更新弹幕服务器信息
         await self._update_danmu_info()
@@ -303,18 +333,30 @@ class DanmakuClient(EventEmitter[DanmakuListener], AsyncStoppableMixin):
 
     async def _terminate_message_loop(self) -> None:
         self._message_loop_task.cancel()
+        # await self.room.disconnect()
         with suppress(asyncio.CancelledError):
             await self._message_loop_task
         self._logger.debug('Terminated message loop')
 
     @async_task_with_logger_context
     async def _message_loop(self) -> None:
+        room = self.room
+
+        while True:
+            delay = 0
+            await room.connect()
+
+            delay += 1
+            await asyncio.sleep(min(delay, 120))
+
+        return
         while True:
             for msg in await self._receive():
                 await self._dispatch_message(msg)
 
     async def _dispatch_message(self, msg: Dict[str, Any]) -> None:
-        await self._emit('danmaku_received', msg)
+        if type(msg['data']) is dict:
+            await self._emit('danmaku_received', msg['data'])
 
     async def _receive(self) -> List[Dict[str, Any]]:
         self._reset_retry()

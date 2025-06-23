@@ -4,6 +4,9 @@
 
 这个工具是自动化的，会自动完成直播的录制, 在出现未处理异常时会发送通知，空间不足能够自动回收空间，还有详细日志记录，因此可以长期无人值守运行在服务器上。
 
+## **修改内容**
+> - danmaku_client完全放弃自带的弹幕实现，改用bilibli-api-python提供弹幕信息
+
 ## 屏幕截图
 
 ![webapp](https://user-images.githubusercontent.com/33854576/128959800-451d03e7-c9f9-4732-ac90-97fdb6b88972.png)
