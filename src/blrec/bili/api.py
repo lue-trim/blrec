@@ -18,15 +18,15 @@ __all__ = 'AppApi', 'WebApi'
 
 
 BASE_HEADERS: Final = {
-    #'Accept-Encoding': 'gzip, deflate, br',
-    #'Accept-Language': 'zh-CN,zh;q=0.8,zh-TW;q=0.7,zh-HK;q=0.5,en;q=0.3,en-US;q=0.2',  # noqa
-    #'Accept': 'application/json, text/plain, */*',
-    #'Cache-Control': 'no-cache',
-    #'Connection': 'keep-alive',
-    #'Origin': 'https://live.bilibili.com',
-    #'Pragma': 'no-cache',
-    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36',  # noqa
-    'Referer': "https://www.bilibili.com"
+    'Accept-Encoding': 'gzip, deflate, br',
+    'Accept-Language': 'zh-CN,zh;q=0.8,zh-TW;q=0.7,zh-HK;q=0.5,en;q=0.3,en-US;q=0.2',  # noqa
+    'Accept': 'application/json, text/plain, */*',
+    'Cache-Control': 'no-cache',
+    'Connection': 'keep-alive',
+    'Origin': 'https://live.bilibili.com',
+    'Pragma': 'no-cache',
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36',  # noqa
+    # 'Referer': "https://www.bilibili.com"
 }
 
 
@@ -266,9 +266,10 @@ class WebApi(BaseApi):
         try:
             return await super()._get_json_res(url, *args, **kwds)
         except ApiRequestError as e:
-            if e.code == -352 and time.monotonic() - self.__class__._wbi_key_mtime > 60:
-            # if e.code == -352:
-                await self._update_wbi_key()
+            # if e.code == -352 and time.monotonic() - self.__class__._wbi_key_mtime > 60:
+            if e.code == -352:
+                self._logger.warning("Http request -352, Updating wbi key..")
+                await self._update_wbi_key(ignore_timelimit=True)
             raise
 
     async def room_init(self, room_id: int) -> ResponseData:
@@ -338,8 +339,8 @@ class WebApi(BaseApi):
         json_res = await self._get_json(self.base_api_urls, path, check_response=False)
         return json_res
 
-    async def _update_wbi_key(self) -> None:
-        if time.monotonic() - self.__class__._wbi_key_mtime < 60:
+    async def _update_wbi_key(self, ignore_timelimit=False) -> None:
+        if time.monotonic() - self.__class__._wbi_key_mtime < 600 and not ignore_timelimit:
             return
             # await asyncio.sleep(60)
         self._logger.debug("Refreshing wbi key...")
