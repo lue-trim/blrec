@@ -4,8 +4,80 @@
 
 这个工具是自动化的，会自动完成直播的录制, 在出现未处理异常时会发送通知，空间不足能够自动回收空间，还有详细日志记录，因此可以长期无人值守运行在服务器上。
 
-## **修改内容**
+## *修改内容*
 > - danmaku_client完全放弃自带的弹幕实现，改用bilibli-api-python提供弹幕信息
+
+## *安装方法*
+- pip requirements:
+```
+aiofiles==22.1.0
+aiohappyeyeballs==2.4.4
+aiohttp==3.11.10
+aiosignal==1.3.2
+anyio==4.7.0
+APScheduler==3.11.0
+async-timeout==5.0.1
+attrs==21.4.0
+av==10.0.0
+beautifulsoup4==4.13.4
+bilibili-api-python==17.2.1
+bitarray==2.9.3
+Brotli==1.1.0
+brotli-asgi==1.3.0
+certifi==2024.12.14
+charset-normalizer==3.4.0
+click==8.0.4
+colorama==0.4.6
+dnspython==2.7.0
+email-validator==1.3.1
+exceptiongroup==1.2.2
+fastapi==0.88.0
+frozenlist==1.5.0
+h11==0.14.0
+httptools==0.6.4
+humanize==3.14.0
+idna==3.10
+importlib_resources==6.4.5
+iso8601==2.1.0
+jsonpath==0.82
+loguru==0.7.3
+lxml==5.4.0
+lxml_html_clean==0.4.2
+m3u8==3.6.0
+multidict==6.1.0
+ordered-set==4.1.0
+pillow==11.2.1
+propcache==0.2.1
+psutil==5.9.8
+pycryptodomex==3.23.0
+pydantic==1.10.19
+PyJWT==2.10.1
+python-dateutil==2.9.0.post0
+python-dotenv==1.0.1
+python-liquid==1.12.1
+PyYAML==6.0.2
+qrcode==8.2
+qrcode-terminal==0.8
+reactivex==4.0.4
+requests==2.32.3
+six==1.17.0
+sniffio==1.3.1
+soupsieve==2.7
+starlette==0.22.0
+tenacity==8.5.0
+toml==0.10.2
+tqdm==4.67.1
+typer==0.7.0
+typing_extensions==4.12.2
+tzlocal==5.3.1
+urllib3==2.2.3
+uvicorn==0.20.0
+uvloop==0.21.0
+watchfiles==1.0.3
+websockets==14.1
+yarl==1.20.1
+```
+- 然后使用`pip install . --no-deps`即可
 
 ## 屏幕截图
 

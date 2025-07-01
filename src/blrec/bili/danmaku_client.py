@@ -333,7 +333,8 @@ class DanmakuClient(EventEmitter[DanmakuListener], AsyncStoppableMixin):
 
     async def _terminate_message_loop(self) -> None:
         self._message_loop_task.cancel()
-        # await self.room.disconnect()
+        if self.room.get_status() == 2:
+            await self.room.disconnect()
         with suppress(asyncio.CancelledError):
             await self._message_loop_task
         self._logger.debug('Terminated message loop')
@@ -342,13 +343,21 @@ class DanmakuClient(EventEmitter[DanmakuListener], AsyncStoppableMixin):
     async def _message_loop(self) -> None:
         room = self.room
 
-        delay = 0
+        delay = -1
         while True:
-            await room.connect()
-
+            # 先休息一下
             delay += 1
-            self._logger.debug(f"Danmaku server disconnected, retrying in {delay} seconds...")
+            self._logger.debug(f"Connecting Danmaku server in {delay} seconds...")
             await asyncio.sleep(min(delay, 120))
+
+            # 根据状态进行下一步操作
+            status = room.get_status()
+            if status in (1,2):
+                await room.disconnect()
+            elif status == 3:
+                continue
+            else:
+                await room.connect()
 
         return
         while True:
