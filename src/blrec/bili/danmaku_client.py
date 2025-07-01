@@ -90,28 +90,6 @@ class DanmakuClient(EventEmitter[DanmakuListener], AsyncStoppableMixin):
                 )
         self._logger.debug(f'protover: {self._protover}')
 
-        # 获取Cookies
-        cookies_str = self.headers.get('Cookie', '')
-
-        # Cookies处理 @haruka-bot
-        if cookies_str.endswith(';'):
-            cookies_str = cookies_str[:-1]
-        cookies_strs = cookies_str.split(';')
-        cookies_dict = {}
-        for i in cookies_strs:
-            item_list = i.split('=')
-            if len(item_list) > 1:
-                d = {item_list[0].lower(): item_list[1]}
-                cookies_dict.update(d)
-            elif len(item_list) == 1:
-                d = {item_list[0].lower(): ""}
-                cookies_dict.update(d)
-
-        # 创建room对象
-        c = Credential(**cookies_dict)
-        self.room = live.LiveDanmaku(room_id, credential=c)
-        self.room.add_event_listener('ALL', self._dispatch_message)
-
     @property
     def headers(self) -> Dict[str, str]:
         return self._headers
@@ -160,6 +138,28 @@ class DanmakuClient(EventEmitter[DanmakuListener], AsyncStoppableMixin):
     )
     async def _connect(self) -> None:
         self._logger.debug('Connecting to server...')
+
+        # 获取Cookies
+        cookies_str = self.headers.get('Cookie', '')
+
+        # Cookies处理 @haruka-bot
+        if cookies_str.endswith(';'):
+            cookies_str = cookies_str[:-1]
+        cookies_strs = cookies_str.split(';')
+        cookies_dict = {}
+        for i in cookies_strs:
+            item_list = i.split('=')
+            if len(item_list) > 1:
+                d = {item_list[0].lower(): item_list[1]}
+                cookies_dict.update(d)
+            elif len(item_list) == 1:
+                d = {item_list[0].lower(): ""}
+                cookies_dict.update(d)
+
+        # 创建room对象
+        c = Credential(**cookies_dict)
+        self.room = live.LiveDanmaku(self._room_id, credential=c)
+        self.room.add_event_listener('ALL', self._dispatch_message)
 
         self._logger.debug('Connected to server')
         await self._emit('client_connected')
