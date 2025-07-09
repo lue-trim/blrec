@@ -152,12 +152,27 @@ class DanmakuClient(EventEmitter[DanmakuListener], AsyncStoppableMixin):
             if len(item_list) > 1:
                 d = {item_list[0].lower(): item_list[1]}
                 cookies_dict.update(d)
-            elif len(item_list) == 1:
-                d = {item_list[0].lower(): ""}
-                cookies_dict.update(d)
+            # elif len(item_list) == 1:
+            #     d = {item_list[0].lower(): ""}
+            #     cookies_dict.update(d)
+
+        # 建立Credential并检查关键字是否合法
+        LEGAL_KW_LIST = [
+            'sessdata', 
+            'bili_jct', 
+            'buvid3', 
+            'buvid4', 
+            'dedeuserid',
+            'ac_time_value',
+            ]
+        credential_dict = {}
+        for key in LEGAL_KW_LIST:
+            credential_dict.update({
+                key: cookies_dict.get(key, "")
+            })
+        c = Credential(**credential_dict)
 
         # 创建room对象
-        c = Credential(**cookies_dict)
         self.room = live.LiveDanmaku(self._room_id, credential=c)
         self.room.add_event_listener('ALL', self._dispatch_message)
 
