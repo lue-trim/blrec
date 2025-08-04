@@ -368,7 +368,12 @@ class DanmakuClient(EventEmitter[DanmakuListener], AsyncStoppableMixin):
             # 根据状态进行下一步操作
             status = room.get_status()
             if status in (1,2):
-                await room.disconnect()
+                try:
+                    await room.disconnect()
+                except Exception as e:
+                    msg = f"Danmaku disconnecting failed: \n{e}"
+                    self._logger.warning(msg)
+                    pass
             elif status == 3:
                 continue
             else:
